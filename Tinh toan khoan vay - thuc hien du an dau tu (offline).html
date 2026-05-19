@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tính toán khoản vay CTY</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 20px;
+      color: #222;
+    }
+
+    .container {
+      max-width: 980px;
+      margin: auto;
+      background: white;
+      padding: 24px;
+      border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 28px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    input, select {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+
+    .date-picker {
+      display: flex;
+      gap: 8px;
+      position: relative;
+    }
+
+    .date-picker input[type="text"] {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .date-button {
+      background: #eef2ff;
+      border: 1px solid #b8c4ff;
+      border-radius: 8px;
+      color: #263a8a;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      padding: 0 12px;
+      white-space: nowrap;
+    }
+
+    .date-button:hover {
+      background: #e0e7ff;
+    }
+
+    .native-date-input {
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+      position: absolute;
+      right: 0;
+      top: 100%;
+      width: 1px;
+    }
+
+    .results {
+      margin-top: 28px;
+      border-top: 2px solid #eee;
+      padding-top: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+    }
+
+    th {
+      background: #fafafa;
+    }
+
+    .good {
+      color: green;
+      font-weight: bold;
+    }
+
+    .bad {
+      color: red;
+      font-weight: bold;
+    }
+
+    .highlight-red {
+      color: red;
+      font-weight: bold;
+    }
+
+    .small {
+      color: #666;
+      font-size: 13px;
+    }
+
+    .loading {
+      color: #d97706;
+      font-weight: bold;
+    }
+
+    .footer {
+      margin-top: 18px;
+      font-size: 13px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Tính toán khoản vay - Thực hiện dự án đầu tư</h1>
+
+    <div class="grid">
+      <div class="field">
+        <label>Tổng vốn đầu tư (USD)</label>
+        <input type="text" id="tongVon" value="500,000" inputmode="decimal" />
+      </div>
+
+      <div class="field">
+        <label>Vốn góp (USD)</label>
+        <input type="text" id="vonGop" value="150,000" inputmode="decimal" />
+      </div>
+
+      <div class="field">
+        <label>Dư nợ vay trung, dài hạn (USD)</label>
+        <input type="text" id="duNo" value="331,000" inputmode="decimal" />
+      </div>
+
+      <div class="field">
+        <label>Nguyên tệ</label>
+        <select id="currency">
+          <option value="USD">USD</option>
+          <option value="EUR">EUR</option>
+          <option value="JPY">JPY</option>
+          <option value="GBP">GBP</option>
+          <option value="AUD">AUD</option>
+          <option value="CAD">CAD</option>
+          <option value="SGD">SGD</option>
+          <option value="CNY">CNY</option>
+          <option value="HKD">HKD</option>
+          <option value="KRW">KRW</option>
+          <option value="THB">THB</option>
+          <option value="VND">VND</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Số tiền nguyên tệ</label>
+        <input type="text" id="nguyenTe" value="150,000" inputmode="decimal" />
+      </div>
+
+      <div class="field">
+        <label>Ngày rút vốn đầu tiên</label>
+        <div class="date-picker">
+          <input type="text" id="ngayRutVon" value="26/02/2025" inputmode="numeric" placeholder="dd/mm/yyyy" />
+          <button type="button" class="date-button" data-date-target="ngayRutVon">Chọn</button>
+          <input type="date" class="native-date-input" data-date-source="ngayRutVon" value="2025-02-26" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Ngày ký thỏa thuận gia hạn</label>
+        <div class="date-picker">
+          <input type="text" id="ngayGiaHan" value="26/02/2026" inputmode="numeric" placeholder="dd/mm/yyyy" />
+          <button type="button" class="date-button" data-date-target="ngayGiaHan">Chọn</button>
+          <input type="date" class="native-date-input" data-date-source="ngayGiaHan" value="2026-02-26" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Ngày trả nợ cuối cùng</label>
+        <div class="date-picker">
+          <input type="text" id="ngayTraNo" value="25/02/2027" inputmode="numeric" placeholder="dd/mm/yyyy" />
+          <button type="button" class="date-button" data-date-target="ngayTraNo">Chọn</button>
+          <input type="date" class="native-date-input" data-date-source="ngayTraNo" value="2027-02-25" />
+        </div>
+      </div>
+    </div>
+
+    <div class="results">
+      <table>
+        <thead>
+          <tr>
+            <th>Tiêu chí</th>
+            <th>Kết quả</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Giới hạn vốn vay</td>
+            <td id="gioiHan"></td>
+          </tr>
+          <tr>
+            <td>Hạn mức vay còn lại</td>
+            <td id="hanMuc"></td>
+          </tr>
+          <tr>
+            <td>Tỷ giá live</td>
+            <td id="tyGia" class="loading">Đang tải...</td>
+          </tr>
+          <tr>
+            <td>Số tiền vay đăng ký (USD)</td>
+            <td id="soTienUsd"></td>
+          </tr>
+          <tr>
+            <td>Còn trong hạn mức?</td>
+            <td id="ketQua"></td>
+          </tr>
+          <tr>
+            <td>Ngày tròn 1 năm</td>
+            <td id="motNam"></td>
+          </tr>
+          <tr class="highlight-red">
+            <td>Hạn đăng ký</td>
+            <td id="hanDangKy"></td>
+          </tr>
+          <tr>
+            <td>Thời hạn vay (tháng)</td>
+            <td id="thoiHan"></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="footer">
+        Tỷ giá được lấy tự động từ nhiều nguồn dự phòng (base USD). Nếu không tải được, ô tỷ giá sẽ báo lỗi để bạn nhập lại sau.
+        <br />
+        <span id="holidayStatus">Ngày nghỉ lễ Việt Nam sẽ tự cập nhật theo năm khi tính toán.</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let fxRates = { USD: 1 };
+    let fxLoadOk = false;
+
+    const holidayCache = {};
+
+    function formatMoney(value) {
+      return Number(value).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function formatRate(value) {
+      return Number(value).toLocaleString('en-US', {
+        maximumFractionDigits: 6
+      });
+    }
+
+    function parseNumber(value) {
+      const cleaned = String(value || '').replace(/,/g, '').trim();
+      const number = Number(cleaned);
+      return Number.isFinite(number) ? number : 0;
+    }
+
+    function formatInputValue(value) {
+      const cleaned = String(value || '').replace(/,/g, '').replace(/[^\d.]/g, '');
+      if (!cleaned) return '';
+
+      const parts = cleaned.split('.');
+      const integerPart = parts[0] || '0';
+      const decimalPart = parts.length > 1 ? '.' + parts.slice(1).join('') : '';
+
+      return Number(integerPart).toLocaleString('en-US') + decimalPart;
+    }
+
+    function setupNumberFormatting() {
+      document.querySelectorAll('.money-input').forEach(input => {
+        input.value = formatInputValue(input.value);
+
+        input.addEventListener('input', () => {
+          const oldLength = input.value.length;
+          const oldPosition = input.selectionStart || oldLength;
+
+          input.value = formatInputValue(input.value);
+
+          const newLength = input.value.length;
+          const newPosition = Math.max(0, oldPosition + (newLength - oldLength));
+          input.setSelectionRange(newPosition, newPosition);
+
+          calculate();
+        });
+      });
+    }
+
+    function formatDate(date) {
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return day + '/' + month + '/' + year;
+    }
+
+    function parseDateInput(value) {
+      const parts = String(value || '').trim().split('/');
+      if (parts.length !== 3) return null;
+
+      const day = Number(parts[0]);
+      const month = Number(parts[1]);
+      const year = Number(parts[2]);
+
+      if (parts[2].length !== 4 || year < 1900 || year > 2100) {
+        return null;
+      }
+
+      const date = new Date(year, month - 1, day);
+
+      if (
+        date.getFullYear() !== year ||
+        date.getMonth() !== month - 1 ||
+        date.getDate() !== day
+      ) {
+        return null;
+      }
+
+      return date;
+    }
+
+    function formatDateInput(value) {
+      const digits = String(value || '').replace(/\D/g, '');
+      const day = digits.slice(0, 2);
+      const month = digits.slice(2, 4);
+      const year = digits.slice(4);
+
+      return [day, month, year].filter(Boolean).join('/');
+    }
+
+    function toIsoDate(date) {
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return year + '-' + month + '-' + day;
+    }
+
+    function syncNativeDateInput(textInput) {
+      const date = parseDateInput(textInput.value);
+      const nativeInput = document.querySelector('[data-date-source="' + textInput.id + '"]');
+
+      if (date && nativeInput) {
+        nativeInput.value = toIsoDate(date);
+      }
+    }
+
+    function setupDateFormatting() {
+      document.querySelectorAll('.date-input').forEach(input => {
+        syncNativeDateInput(input);
+
+        input.addEventListener('input', () => {
+          if (!input.value.includes('/')) {
+            input.value = formatDateInput(input.value);
+          }
+
+          syncNativeDateInput(input);
+          calculate();
+        });
+
+        input.addEventListener('blur', () => {
+          const date = parseDateInput(input.value);
+
+          if (date) {
+            input.value = formatDate(date);
+            syncNativeDateInput(input);
+            calculate();
+          }
+        });
+      });
+
+      document.querySelectorAll('.native-date-input').forEach(nativeInput => {
+        nativeInput.addEventListener('change', () => {
+          const textInput = document.getElementById(nativeInput.dataset.dateSource);
+          const date = new Date(nativeInput.value + 'T00:00:00');
+
+          if (textInput && nativeInput.value) {
+            textInput.value = formatDate(date);
+            calculate();
+          }
+        });
+      });
+
+      document.querySelectorAll('.date-button').forEach(button => {
+        button.addEventListener('click', () => {
+          const textInput = document.getElementById(button.dataset.dateTarget);
+          const nativeInput = document.querySelector('[data-date-source="' + button.dataset.dateTarget + '"]');
+
+          if (!nativeInput) return;
+
+          if (textInput) {
+            syncNativeDateInput(textInput);
+          }
+
+          if (typeof nativeInput.showPicker === 'function') {
+            nativeInput.showPicker();
+          } else {
+            nativeInput.click();
+          }
+        });
+      });
+    }
+
+    function fallbackVietnamHolidays(year) {
+      return [
+        year + '-01-01',
+        year + '-04-30',
+        year + '-05-01',
+        year + '-09-02'
+      ];
+    }
+
+    function updateHolidayStatus() {
+      const years = Object.keys(holidayCache).sort();
+      const statusEl = document.getElementById('holidayStatus');
+
+      if (!statusEl || years.length === 0) return;
+
+      const hasFallback = years.some(year => holidayCache[year].source === 'fallback');
+      const yearText = years.join(', ');
+
+      if (hasFallback) {
+        statusEl.innerText = 'Ngày nghỉ lễ Việt Nam: chưa tải được đầy đủ, đang dùng ngày lễ cố định cho năm ' + yearText + '.';
+      } else {
+        statusEl.innerText = 'Ngày nghỉ lễ Việt Nam đã cập nhật cho năm ' + yearText + '.';
+      }
+    }
+
+    async function loadVietnamHolidaysForYear(year) {
+      if (holidayCache[year]) return holidayCache[year];
+
+      try {
+        const data = await fetchJson('https://date.nager.at/api/v3/PublicHolidays/' + year + '/VN');
+        const dates = Array.isArray(data)
+          ? data.map(holiday => holiday.date).filter(Boolean)
+          : [];
+
+        if (dates.length === 0) {
+          throw new Error('Không có dữ liệu ngày nghỉ');
+        }
+
+        holidayCache[year] = {
+          dates: new Set(dates),
+          source: 'live'
+        };
+      } catch (e) {
+        console.warn('Không tải được lịch nghỉ lễ Việt Nam năm ' + year, e);
+        holidayCache[year] = {
+          dates: new Set(fallbackVietnamHolidays(year)),
+          source: 'fallback'
+        };
+      }
+
+      updateHolidayStatus();
+      return holidayCache[year];
+    }
+
+    async function loadVietnamHolidaysForDates(dates) {
+      const years = new Set();
+
+      dates.forEach(date => {
+        if (!date) return;
+        years.add(date.getFullYear());
+        years.add(date.getFullYear() + 1);
+      });
+
+      await Promise.all(Array.from(years).map(loadVietnamHolidaysForYear));
+    }
+
+    function isVietnamHoliday(date) {
+      const year = date.getFullYear();
+      const holidayYear = holidayCache[year];
+      return holidayYear ? holidayYear.dates.has(toIsoDate(date)) : false;
+    }
+
+    function addDays(date, days) {
+      const d = new Date(date);
+      d.setDate(d.getDate() + days);
+      return d;
+    }
+
+    function addWorkingDays(startDate, days) {
+      const date = new Date(startDate);
+      let added = 0;
+
+      while (added < days) {
+        date.setDate(date.getDate() + 1);
+
+        const day = date.getDay();
+        const isWeekend = day === 0 || day === 6;
+        const isHoliday = isVietnamHoliday(date);
+
+        if (!isWeekend && !isHoliday) {
+          added++;
+        }
+      }
+
+      return date;
+    }
+
+    function monthDiff(start, end) {
+      let months = (end.getFullYear() - start.getFullYear()) * 12;
+      months += end.getMonth() - start.getMonth();
+
+      if (end.getDate() > start.getDate()) {
+        months += 1;
+      }
+
+      return Math.max(months, 0);
+    }
+
+    async function fetchJson(url) {
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      return response.json();
+    }
+
+    async function loadRates() {
+      const sources = [
+        {
+          url: 'https://open.er-api.com/v6/latest/USD',
+          readRates: data => data && data.rates
+        },
+        {
+          url: 'https://api.frankfurter.app/latest?from=USD',
+          readRates: data => data && data.rates
+        },
+        {
+          url: 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json',
+          readRates: data => {
+            if (!data || !data.usd) return null;
+            const rates = { USD: 1 };
+            Object.keys(data.usd).forEach(code => {
+              rates[code.toUpperCase()] = data.usd[code];
+            });
+            return rates;
+          }
+        }
+      ];
+
+      document.getElementById('tyGia').className = 'loading';
+      document.getElementById('tyGia').innerText = 'Đang tải...';
+
+      for (const source of sources) {
+        try {
+          const data = await fetchJson(source.url);
+          const rates = source.readRates(data);
+
+          if (rates && rates.USD === undefined) {
+            rates.USD = 1;
+          }
+
+          if (rates && Object.keys(rates).length > 1) {
+            fxRates = rates;
+            fxLoadOk = true;
+            calculate();
+            return;
+          }
+        } catch (e) {
+          console.warn('Không tải được tỷ giá từ nguồn:', source.url, e);
+        }
+      }
+
+      fxLoadOk = false;
+      document.getElementById('tyGia').className = 'bad';
+      document.getElementById('tyGia').innerText = 'Không tải được tỷ giá live';
+      calculate();
+    }
+
+    async function calculate() {
+      const tongVon = parseNumber(document.getElementById('tongVon').value);
+      const vonGop = parseNumber(document.getElementById('vonGop').value);
+      const duNo = parseNumber(document.getElementById('duNo').value);
+      const currency = document.getElementById('currency').value;
+      const nguyenTe = parseNumber(document.getElementById('nguyenTe').value);
+
+      const ngayRutVon = parseDateInput(document.getElementById('ngayRutVon').value);
+      const ngayGiaHan = parseDateInput(document.getElementById('ngayGiaHan').value);
+      const ngayTraNo = parseDateInput(document.getElementById('ngayTraNo').value);
+
+      if (!ngayRutVon || !ngayGiaHan || !ngayTraNo) {
+        document.getElementById('motNam').innerText = 'Ngày chưa đúng định dạng dd/mm/yyyy';
+        document.getElementById('hanDangKy').innerText = '';
+        document.getElementById('thoiHan').innerText = '';
+        return;
+      }
+
+      await loadVietnamHolidaysForDates([ngayRutVon, ngayGiaHan, ngayTraNo]);
+
+      const gioiHan = tongVon - vonGop;
+      const hanMuc = gioiHan - duNo;
+
+      const rate = fxRates[currency];
+
+      let usdAmount;
+
+      if (currency === 'USD') {
+        usdAmount = nguyenTe;
+      } else if (rate) {
+        usdAmount = nguyenTe / rate;
+      } else {
+        usdAmount = 0;
+      }
+
+      const conHanMuc = usdAmount <= hanMuc;
+
+      const motNam = addDays(ngayRutVon, 365);
+
+      let hanDangKy;
+
+      if (ngayGiaHan > motNam) {
+        hanDangKy = addWorkingDays(motNam, 60);
+      } else {
+        hanDangKy = addWorkingDays(ngayGiaHan, 30);
+      }
+
+      const thoiHan = monthDiff(ngayRutVon, ngayTraNo);
+
+      document.getElementById('gioiHan').innerText = formatMoney(gioiHan) + ' USD';
+      document.getElementById('hanMuc').innerText = formatMoney(hanMuc) + ' USD';
+
+      if (currency === 'USD') {
+        document.getElementById('tyGia').className = fxLoadOk ? '' : 'loading';
+        document.getElementById('tyGia').innerText = '1 USD = 1 USD';
+      } else if (rate) {
+        document.getElementById('tyGia').className = fxLoadOk ? '' : 'loading';
+        document.getElementById('tyGia').innerText = '1 USD = ' + formatRate(rate) + ' ' + currency;
+      } else {
+        document.getElementById('tyGia').className = 'bad';
+        document.getElementById('tyGia').innerText = 'Chưa có tỷ giá cho ' + currency;
+      }
+
+      document.getElementById('soTienUsd').innerText = formatMoney(usdAmount) + ' USD';
+
+      document.getElementById('ketQua').innerHTML = conHanMuc
+        ? '<span class="good">Có</span>'
+        : '<span class="bad">Không</span>';
+
+      document.getElementById('motNam').innerText = formatDate(motNam);
+      document.getElementById('hanDangKy').innerText = formatDate(hanDangKy);
+      document.getElementById('thoiHan').innerText = thoiHan + ' tháng';
+    }
+
+    document.querySelectorAll('#tongVon, #vonGop, #duNo, #nguyenTe').forEach(el => {
+      el.classList.add('money-input');
+    });
+
+    document.querySelectorAll('#ngayRutVon, #ngayGiaHan, #ngayTraNo').forEach(el => {
+      el.classList.add('date-input');
+    });
+
+    setupNumberFormatting();
+    setupDateFormatting();
+
+    document.querySelectorAll('input:not(.money-input):not(.date-input):not(.native-date-input), select').forEach(el => {
+      el.addEventListener('input', calculate);
+      el.addEventListener('change', calculate);
+    });
+
+    loadRates();
+  </script>
+</body>
+</html>
